@@ -3,10 +3,20 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 require('dotenv').config();
 
-const serviceAccount = require('./firebaseadminsdk.json');
-
+// Inicializar Firebase usando variables de entorno
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert({
+    type: process.env.FIREBASE_TYPE,
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: process.env.FIREBASE_AUTH_URI,
+    token_uri: process.env.FIREBASE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+  }),
 });
 
 const app = express();
@@ -51,7 +61,6 @@ app.post('/generar-recomendacion', async (req, res) => {
       const datosNegocio = negocioSnapshot.data();
       const idTipoCocina = datosNegocio.tipo_cocina;
 
-     
       if (tipoCocina.toLowerCase() !== 'cualquiera') {
         if (!idTipoCocina) continue;
 
@@ -66,12 +75,11 @@ app.post('/generar-recomendacion', async (req, res) => {
         }
       }
 
-     
       for (const item of itemsCarta) {
         const estadoValido = !estado || (item.estado && item.estado.toLowerCase() === estado.toLowerCase());
 
         if (
-          estadoValido && 
+          estadoValido &&
           (item.nombre.toLowerCase().includes(preferencia.toLowerCase()) ||
             item.descripcion.toLowerCase().includes(preferencia.toLowerCase())) &&
           item.precio <= presupuestoRestante
@@ -85,14 +93,12 @@ app.post('/generar-recomendacion', async (req, res) => {
           });
           presupuestoRestante -= item.precio;
 
-    
           if (presupuestoRestante <= 0) {
             break;
           }
         }
       }
 
- 
       if (presupuestoRestante <= 0) {
         break;
       }
